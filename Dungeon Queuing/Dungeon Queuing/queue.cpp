@@ -8,6 +8,7 @@
 #include <random>
 #include <chrono>
 #include <limits>
+#include <sstream>
 
 using namespace std;
 
@@ -27,23 +28,31 @@ vector<unsigned int> num_parties_served;
 vector<unsigned int> instance_time_served;
 vector<string> instance_status;
 
-// validate user input
-unsigned int getValidInput( const string& prompt, unsigned int minValue = 0,
-                            unsigned int maxValue = numeric_limits<unsigned int>::max()) {
-    unsigned int value;
+unsigned int getValidInput(const string& prompt, unsigned int minValue = 0,
+    unsigned int maxValue = numeric_limits<unsigned int>::max()) {
+    string input;
+    int tempValue;
+
     while (true) {
         cout << prompt;
-        cin >> value;
+        cin >> input;
 
-        if (cin.fail() || value < minValue || value > maxValue) {
-            cin.clear(); // clear error flag
-            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // discard invalid input
-            cout << "Invalid input! Please enter a number between " << minValue << " and " << maxValue << ".\n";
-            cout << "\n";
+        // check if the entire input is a valid integer
+        stringstream ss(input);
+        if (!(ss >> tempValue) || !(ss.eof())) {
+            cout << "Invalid input! Please enter a valid integer number.\n\n";
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            continue;
         }
-        else {
-            return value;
+
+        // ensure the number is within valid range
+        if (tempValue < 0 || (unsigned int)tempValue < minValue || (unsigned int)tempValue > maxValue) {
+            cout << "Invalid input! Please enter a number between " << minValue << " and " << maxValue << ".\n\n";
+            continue;
         }
+
+        return (unsigned int)tempValue;
     }
 }
 
@@ -97,7 +106,7 @@ int main() {
     h = getValidInput("Enter number of healers: ", 1);
 
     // ensure DPS count is at least 3 for a full party
-    d = getValidInput("Enter number of DPS (must be at least 3): ", 3);
+    d = getValidInput("Enter number of DPS: ", 1);
 
     do {
         t1 = getValidInput("Enter min dungeon time: ", 1);
@@ -143,7 +152,7 @@ int main() {
         instances.emplace_back(instanceHandler, i + 1);
     }
 
-    // ;aunch dispatcher thread
+    // launch dispatcher thread
     thread dispatcherThread(dispatcher, n);
 
     // allow some processing time before stopping
